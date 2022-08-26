@@ -1,0 +1,291 @@
+<!DOCTYPE html><html lang="zh-TW" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>透過Docker建立Drupal7(Apache)容器和MariaDB容器的link | Heegreis</title><meta name="author" content="Heegreis"><meta name="copyright" content="Heegreis"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><meta name="description" content="紀錄在Docker中建立Drupal7的container(容器)，以及MariaDB的container(容器)，並連接這兩個容器 ，讓Drupal實際可使用的兩種建立方式。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="透過Docker建立Drupal7(Apache)容器和MariaDB容器的link">
+<meta property="og:url" content="https://heegreis.com/posts/613b126e/index.html">
+<meta property="og:site_name" content="Heegreis">
+<meta property="og:description" content="紀錄在Docker中建立Drupal7的container(容器)，以及MariaDB的container(容器)，並連接這兩個容器 ，讓Drupal實際可使用的兩種建立方式。">
+<meta property="og:locale" content="zh_TW">
+<meta property="og:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg">
+<meta property="article:published_time" content="2018-01-31T00:00:00.000Z">
+<meta property="article:modified_time" content="2018-01-31T00:00:00.000Z">
+<meta property="article:author" content="Heegreis">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg"><link rel="shortcut icon" href="/img/favicon.ico"><link rel="canonical" href="https://heegreis.com/posts/613b126e/"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//www.google-analytics.com" crossorigin=""/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" media="print" onload="this.media='all'"><script async="async" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script><script>(adsbygoogle = window.adsbygoogle || []).push({
+  google_ad_client: 'ca-pub-6769884711673911',
+  enable_page_level_ads: 'true'
+});</script><script async="async" src="https://www.googletagmanager.com/gtag/js?id=UA-158338894-1"></script><script>window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'UA-158338894-1');
+</script><script>var GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: {"defaultEncoding":1,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"简"},
+  noticeOutdate: undefined,
+  highlight: {"plugin":"highlighjs","highlightCopy":true,"highlightLang":true},
+  copy: {
+    success: '複製成功',
+    error: '複製錯誤',
+    noSupport: '瀏覽器不支援'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '天',
+  date_suffix: {
+    just: '剛剛',
+    min: '分鐘前',
+    hour: '小時前',
+    day: '天前',
+    month: '個月前'
+  },
+  copyright: undefined,
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  source: {
+    jQuery: 'https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js',
+    justifiedGallery: {
+      js: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/js/jquery.justifiedGallery.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/justifiedGallery/dist/css/justifiedGallery.min.css'
+    },
+    fancybox: {
+      js: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js',
+      css: 'https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.css'
+    }
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isanchor: false
+};
+
+var saveToLocal = {
+  set: function setWithExpiry(key, value, ttl) {
+    const now = new Date()
+    const expiryDay = ttl * 86400000
+    const item = {
+      value: value,
+      expiry: now.getTime() + expiryDay,
+    }
+    localStorage.setItem(key, JSON.stringify(item))
+  },
+
+  get: function getWithExpiry(key) {
+    const itemStr = localStorage.getItem(key)
+
+    if (!itemStr) {
+      return undefined
+    }
+    const item = JSON.parse(itemStr)
+    const now = new Date()
+
+    if (now.getTime() > item.expiry) {
+      localStorage.removeItem(key)
+      return undefined
+    }
+    return item.value
+  }
+}
+
+// https://stackoverflow.com/questions/16839698/jquery-getscript-alternative-in-native-javascript
+const getScript = url => new Promise((resolve, reject) => {
+  const script = document.createElement('script')
+  script.src = url
+  script.async = true
+  script.onerror = reject
+  script.onload = script.onreadystatechange = function() {
+    const loadState = this.readyState
+    if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+    script.onload = script.onreadystatechange = null
+    resolve()
+  }
+  document.head.appendChild(script)
+})</script><script id="config_change">var GLOBAL_CONFIG_SITE = { 
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2018-01-31 00:00:00'
+}</script><noscript><style type="text/css">
+  #nav {
+    opacity: 1
+  }
+  .justified-gallery img {
+    opacity: 1
+  }
+
+  #recent-posts time,
+  #post-meta time {
+    display: inline !important
+  }
+</style></noscript><script>(function () {  window.activateDarkMode = function () {
+    document.documentElement.setAttribute('data-theme', 'dark')
+    if (document.querySelector('meta[name="theme-color"]') !== null) {
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+    }
+  }
+  window.activateLightMode = function () {
+    document.documentElement.setAttribute('data-theme', 'light')
+   if (document.querySelector('meta[name="theme-color"]') !== null) {
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+    }
+  }
+  const autoChangeMode = '1'
+  const t = saveToLocal.get('theme')
+  if (autoChangeMode === '1') {
+    const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const isLightMode = window.matchMedia('(prefers-color-scheme: light)').matches
+    const isNotSpecified = window.matchMedia('(prefers-color-scheme: no-preference)').matches
+    const hasNoSupport = !isDarkMode && !isLightMode && !isNotSpecified
+    if (t === undefined) {
+      if (isLightMode) activateLightMode()
+      else if (isDarkMode) activateDarkMode()
+      else if (isNotSpecified || hasNoSupport) {
+        const now = new Date()
+        const hour = now.getHours()
+        const isNight = hour <= 6 || hour >= 18
+        isNight ? activateDarkMode() : activateLightMode()
+      }
+      window.matchMedia('(prefers-color-scheme: dark)').addListener(function (e) {
+        if (saveToLocal.get('theme') === undefined) {
+          e.matches ? activateDarkMode() : activateLightMode()
+        }
+      })
+    } else if (t === 'light') activateLightMode()
+    else activateDarkMode()
+  } else if (autoChangeMode === '2') {
+    const now = new Date()
+    const hour = now.getHours()
+    const isNight = hour <= 6 || hour >= 18
+    if (t === undefined) isNight ? activateDarkMode() : activateLightMode()
+    else if (t === 'light') activateLightMode()
+    else activateDarkMode()
+  } else {
+    if (t === 'dark') activateDarkMode()
+    else if (t === 'light') activateLightMode()
+  }const asideStatus = saveToLocal.get('aside-status')
+if (asideStatus !== undefined) {
+   if (asideStatus === 'hide') {
+     document.documentElement.classList.add('hide-aside')
+   } else {
+     document.documentElement.classList.remove('hide-aside')
+   }
+}})()</script><meta name="generator" content="Hexo 5.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="author-avatar"><img class="avatar-img" src="/img/avatar.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data"><div class="data-item is-center"><div class="data-item-link"><a href="/archives/"><div class="headline">文章</div><div class="length-num">12</div></a></div></div><div class="data-item is-center"><div class="data-item-link"><a href="/tags/"><div class="headline">標籤</div><div class="length-num">10</div></a></div></div></div><hr/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首頁</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 歸檔</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 標籤</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分類</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 連結</span></a></div><div class="menus_item"><a class="site-page" href="/donate/"><i class="fa-fw fas fa-coffee"></i><span> 贊助</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 關於</span></a></div></div></div></div><div id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg)"><nav id="nav"><span id="blog_name"><a id="site-name" href="/">Heegreis</a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首頁</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 歸檔</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 標籤</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分類</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 連結</span></a></div><div class="menus_item"><a class="site-page" href="/donate/"><i class="fa-fw fas fa-coffee"></i><span> 贊助</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 關於</span></a></div></div><div id="toggle-menu"><a class="site-page"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">透過Docker建立Drupal7(Apache)容器和MariaDB容器的link</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">發表於</span><time class="post-meta-date-created" datetime="2018-01-31T00:00:00.000Z" title="發表於 2018-01-31 00:00:00">2018-01-31</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新於</span><time class="post-meta-date-updated" datetime="2018-01-31T00:00:00.000Z" title="更新於 2018-01-31 00:00:00">2018-01-31</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-commentcount"><i class="far fa-comments fa-fw post-meta-icon"></i><span class="post-meta-label">評論數:</span><span class="disqus-comment-count"><a href="https://heegreis.com/posts/613b126e/#disqus_thread"></a></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><p>紀錄在Docker中建立Drupal7的container(容器)，以及MariaDB的container(容器)，並連接這兩個容器 ，讓Drupal實際可使用的兩種建立方式。</p>
+<a id="more"></a>
+<p>個別建立兩個容器</p>
+<p>用 Docker Compose 一次建立2個容器與設定</p>
+<h1 id="共同步驟"><a class="header-anchor" href="#共同步驟"></a>共同步驟</h1>
+<h2 id="Pull-下載-image-映像檔"><a class="header-anchor" href="#Pull-下載-image-映像檔"></a>Pull(下載)image(映像檔)</h2>
+<p>Pull Drupal:7.56 和 MariaDB:10.2.7</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ docker pull mariadb:10.2.7</span><br><span class="line">$ docker pull drupal:7.56</span><br></pre></td></tr></table></figure>
+<h1 id="個別建立2個容器"><a class="header-anchor" href="#個別建立2個容器"></a>個別建立2個容器</h1>
+<p>建立MariaDB容器</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ docker run --name  mariadbContainerName -e MYSQL_ROOT_PASSWORD=myPassword -d mariadb:10.2.7</span><br></pre></td></tr></table></figure>
+<p>其中，  <code>mariadbContainerName</code> 是所要建立的容器 name ； <code>myPassword</code> 是所要設定的 Root 密碼。</p>
+<h2 id="透過-MySQL-command-line-client-連結到-MariaDB，並建立資料庫與使用者"><a class="header-anchor" href="#透過-MySQL-command-line-client-連結到-MariaDB，並建立資料庫與使用者"></a>透過 MySQL command line client 連結到 MariaDB，並建立資料庫與使用者</h2>
+<p>連結資料庫，完成後即可輸入 MySQL 指令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ docker run -it --link mariadbContainerName:mysql --rm mariadb:10.2.7 sh -c <span class="string">&#x27;exec mysql -h&quot;$MYSQL_PORT_3306_TCP_ADDR&quot; -p&quot;$MYSQL_PORT_3306_TCP_PORT&quot; -uroot -p&quot;$MYSQL_ENV_MYSQL_ROOT_PASSWORD&quot;&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>其中， <code>mariadb:10.2.7</code> 若沒有指定版本，會使用latest版。</p>
+<p>建立給 Drupal 用的資料庫</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&gt; create database drupalDatabaseName;</span><br></pre></td></tr></table></figure>
+<p>其中， <code>drupalDatabaseName</code> 是資料庫的名稱。</p>
+<p>建立使用者</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&gt; create user username@<span class="string">&#x27;%&#x27;</span> identified by <span class="string">&#x27;userPassword&#x27;</span>;</span><br></pre></td></tr></table></figure>
+<p>其中， <code>username</code> 是要建立的使用者名稱； <code>userPassword</code> 是使用者的密碼。</p>
+<p>設定資料庫權限</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&gt; grant all privileges on drupalDatabaseName.* to username@<span class="string">&#x27;%&#x27;</span>;</span><br></pre></td></tr></table></figure>
+<p>離開MariaDB</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&gt; <span class="built_in">exit</span></span><br></pre></td></tr></table></figure>
+<h2 id="建立Drupal容器，並且與MariaDB容器連接"><a class="header-anchor" href="#建立Drupal容器，並且與MariaDB容器連接"></a>建立Drupal容器，並且與MariaDB容器連接</h2>
+<p>建立Drupal容器</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ docker run --name drupalContainerName -p 80:80 --link  mariadbContainerName:mariadbNickname -d drupal:7.56</span><br></pre></td></tr></table></figure>
+<p>其中， <code>drupalContainerName </code> 是所要建立的容器 name，並且將主機的 80port 指到這個容器的 80port；<code>mariadbNickname</code> 作為 MariaDB 的別名，讓我們在建立Drupal網站時，以此代表資料庫的IP 。</p>
+<p>安裝Drupal<br>
+進到瀏覽器的drupal安裝畫面，在 Set up database 步驟裡的 ADVANCED OPTIONS 底下的 Database host 欄位輸入 <code>mariadbNickname</code> 。</p>
+<h1 id="用-Docker-Compose-一次建立2個容器與設定"><a class="header-anchor" href="#用-Docker-Compose-一次建立2個容器與設定"></a>用 Docker Compose 一次建立2個容器與設定</h1>
+<h2 id="安裝-Docker-Compose"><a class="header-anchor" href="#安裝-Docker-Compose"></a>安裝 Docker Compose</h2>
+<p>安裝指令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ curl -L <span class="string">&quot;https://github.com/docker/compose/releases/download/1.10.0/docker-compose-<span class="subst">$(uname -s)</span>-<span class="subst">$(uname -m)</span>&quot;</span> -o /usr/<span class="built_in">local</span>/bin/docker-compose</span><br></pre></td></tr></table></figure>
+<p>安裝完畢之後給予 Docker Compose 一定的執行權限</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ chmod +x /usr/<span class="built_in">local</span>/bin/docker-compose</span><br></pre></td></tr></table></figure>
+<p>可透過 <code>docker-compose --version</code> 檢查版本</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ docker-compose --version</span><br><span class="line">docker-compose version 1.15.0, build e12f3b9</span><br></pre></td></tr></table></figure>
+<h2 id="建立-Compose-檔案"><a class="header-anchor" href="#建立-Compose-檔案"></a>建立 Compose 檔案</h2>
+<p>建議先建立存放檔案的資料夾</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ mkdir my_drupal</span><br><span class="line">$ <span class="built_in">cd</span> mydrupal</span><br></pre></td></tr></table></figure>
+<p>檔案名稱自行設定。</p>
+<p>在資料夾裡建立一個 <code>docker-compose.yml</code> 檔案，以包含 MariaDB 和 Drupal 兩個容器<br>
+內容如下:</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Drupal with MariaDB</span></span><br><span class="line"></span><br><span class="line"><span class="attr">version:</span> <span class="string">&#x27;2&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">drupal8:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">drupal:8.3.6</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;80:80&quot;</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/var/www/html/modules</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/var/www/html/profiles</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/var/www/html/themes</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/var/www/html/sites</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">always</span></span><br><span class="line">    <span class="attr">links:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">mariadb</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">mariadb_10_2_7:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">mariadb:10.2.7</span></span><br><span class="line">    <span class="attr">volumes:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">/var/lib/mysql</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="attr">MYSQL_ROOT_PASSWORD:</span> <span class="string">eb202</span></span><br><span class="line">      <span class="attr">MYSQL_DATABASE:</span> <span class="string">drupal</span></span><br><span class="line">      <span class="attr">MYSQL_USER:</span> <span class="string">brian</span></span><br><span class="line">      <span class="attr">MYSQL_PASSWORD:</span> <span class="string">eb202</span></span><br><span class="line">    <span class="attr">restart:</span> <span class="string">always</span></span><br></pre></td></tr></table></figure>
+<p><strong>附註:</strong> volumes 的部分可再調整周密</p>
+<h2 id="透過-Compose-啟動服務"><a class="header-anchor" href="#透過-Compose-啟動服務"></a>透過 Compose 啟動服務</h2>
+<p>在同個目錄下透過 docker-compose up -d 就能夠以剛才建立的設定檔啟動那兩個容器。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ docker-compose up -d</span><br></pre></td></tr></table></figure>
+<h2 id="建立透過-MySQL-command-line-client-連結到-MariaDB-compose-版"><a class="header-anchor" href="#建立透過-MySQL-command-line-client-連結到-MariaDB-compose-版"></a>建立透過 MySQL command line client 連結到 MariaDB (compose 版)</h2>
+<p>以 docker compose 建立容器時會為其創建一個默認網路 <code>containerName_defaul</code>，造成網路隔離。</p>
+<p>查詢 docker network</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ docker network ls</span><br></pre></td></tr></table></figure>
+<p>mariadb 連接 mysql 的指令</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ docker run -it --net drupal8_default --link drupal8_mariadb_10_2_7_1:mysql --rm mariadb:10.2.7 sh -c <span class="string">&#x27;exec mysql -h&quot;$MYSQL_PORT_3306_TCP_ADDR&quot; mariadb_10_2_7 -p&quot;$MYSQL_PORT_3306_TCP_PORT&quot; -uroot -p&quot;$MYSQL_ENV_MYSQL_ROOT_PASSWORD&quot;&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>其中 <code>containerName_default</code> 為查詢到的 network name ； <code>mariadb_10_2_7</code> 為 compose 設定檔裡 MariaDB 的 container name。</p>
+<h1 id="參考資料-v10"><a class="header-anchor" href="#參考資料-v10"></a>參考資料</h1>
+<p>Docker —— 從入門到實踐<br>
+<a target="_blank" rel="noopener" href="https://philipzheng.gitbooks.io/docker_practice/content/container/enter.html">https://philipzheng.gitbooks.io/docker_practice/content/container/enter.html</a></p>
+<p>今天開始Drupal環境就用Docker Container來建立<br>
+<a target="_blank" rel="noopener" href="https://blog.hellosanta.com.tw/%E7%B6%B2%E7%AB%99%E8%A8%AD%E8%A8%88/%E4%BC%BA%E6%9C%8D%E5%99%A8/%E4%BB%8A%E5%A4%A9%E9%96%8B%E5%A7%8Bdrupal%E7%92%B0%E5%A2%83%E5%B0%B1%E7%94%A8docker-container%E4%BE%86%E5%BB%BA%E7%AB%8B">https://blog.hellosanta.com.tw/網站設計/伺服器/今天開始drupal環境就用docker-container來建立</a></p>
+<p>MariaDB | Docker Documentation<br>
+<a target="_blank" rel="noopener" href="https://docs.docker.com/samples/mariadb">https://docs.docker.com/samples/mariadb</a></p>
+<p>Docker-Compose將Drupal網站跟環境設定一次搞定<br>
+<a target="_blank" rel="noopener" href="https://blog.hellosanta.com.tw/%E7%B6%B2%E7%AB%99%E8%A8%AD%E8%A8%88/%E4%BC%BA%E6%9C%8D%E5%99%A8/docker-compose%E5%B0%87drupal%E7%B6%B2%E7%AB%99%E8%B7%9F%E7%92%B0%E5%A2%83%E8%A8%AD%E5%AE%9A%E4%B8%80%E6%AC%A1%E6%90%9E%E5%AE%9A">https://blog.hellosanta.com.tw/網站設計/伺服器/docker-compose將drupal網站跟環境設定一次搞定</a></p>
+<p>在 Ubuntu 安裝 Docker 和 Docker Compose<br>
+<a target="_blank" rel="noopener" href="https://yami.io/ubuntu-docker/">https://yami.io/ubuntu-docker/</a></p>
+<p>Drupal | Docker Documentation<br>
+<a target="_blank" rel="noopener" href="https://docs.docker.com/samples/drupal/#-via-docker-compose">https://docs.docker.com/samples/drupal/#-via-docker-compose</a></p>
+<p>Maxkit: Docker Compose 初步閱讀與學習記錄<br>
+<a target="_blank" rel="noopener" href="http://blog.maxkit.com.tw/2017/03/docker-compose.html">http://blog.maxkit.com.tw/2017/03/docker-compose.html</a></p>
+<p>MYSQL_DATABASE does not create database #68<br>
+<a target="_blank" rel="noopener" href="https://github.com/docker-library/mariadb/issues/68">https://github.com/docker-library/mariadb/issues/68</a></p>
+<!--stackedit_data:
+eyJoaXN0b3J5IjpbLTEwOTg5NDIwMThdfQ==
+--></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">文章作者: </span><span class="post-copyright-info"><a href="mailto:undefined">Heegreis</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">文章連結: </span><span class="post-copyright-info"><a href="https://heegreis.com/posts/613b126e/">https://heegreis.com/posts/613b126e/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">版權聲明: </span><span class="post-copyright-info">本部落格所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 許可協議。轉載請註明來自 <a href="https://heegreis.com" target="_blank">Heegreis</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"></div><div class="post_share"><div class="social-share" data-image="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/social-share.js/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/social-share.js/dist/js/social-share.min.js" defer></script></div></div><div class="post-reward"><div class="reward-button"><i class="fas fa-qrcode"></i> 打賞<div class="reward-main"><ul class="reward-all"><li class="reward-item"><a href="/donate/" target="_blank"><img class="post-qr-code-img" src="/img/heart.png" alt="前往贊助頁面"/></a><div class="post-qr-code-desc">前往贊助頁面</div></li></ul></div></div></div><nav class="pagination-post" id="pagination"><div class="prev-post pull-left"><a href="/posts/f32ef76a/"><img class="prev-cover" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="pagination-info"><div class="label">上一篇</div><div class="prev_info">PCL(Point Cloud Library)起手紀錄在win10環境</div></div></a></div><div class="next-post pull-right"><a href="/posts/ec2ce382/"><img class="next-cover" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">Keras安裝筆記</div></div></a></div></nav><hr/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 評論</span></div></div><div class="comment-wrap"><div><div id="disqus_thread"></div></div></div></div></div><div class="aside_content" id="aside_content"><div class="card-widget card-info"><div class="card-content"><div class="card-info-avatar is-center"><img class="avatar-img" src="/img/avatar.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/><div class="author-info__name">Heegreis</div><div class="author-info__description"></div></div><div class="card-info-data"><div class="card-info-data-item is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">12</div></a></div><div class="card-info-data-item is-center"><a href="/tags/"><div class="headline">標籤</div><div class="length-num">10</div></a></div></div><a class="button--animated" id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Heegreis"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/Heegreis" target="_blank" title="Github"><i class="fab fa-github"></i></a><a class="social-icon" href="mailto:run3113214@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a></div></div></div><div class="card-widget card-announcement"><div class="card-content"><div class="item-headline"><i class="fas fa-bullhorn card-announcement-animation"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="card-content"><div class="item-headline"><i class="fas fa-stream"></i><span>目錄</span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%85%B1%E5%90%8C%E6%AD%A5%E9%A9%9F"><span class="toc-number">1.</span> <span class="toc-text">共同步驟</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Pull-%E4%B8%8B%E8%BC%89-image-%E6%98%A0%E5%83%8F%E6%AA%94"><span class="toc-number">1.1.</span> <span class="toc-text">Pull(下載)image(映像檔)</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%80%8B%E5%88%A5%E5%BB%BA%E7%AB%8B2%E5%80%8B%E5%AE%B9%E5%99%A8"><span class="toc-number">2.</span> <span class="toc-text">個別建立2個容器</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%8F%E9%81%8E-MySQL-command-line-client-%E9%80%A3%E7%B5%90%E5%88%B0-MariaDB%EF%BC%8C%E4%B8%A6%E5%BB%BA%E7%AB%8B%E8%B3%87%E6%96%99%E5%BA%AB%E8%88%87%E4%BD%BF%E7%94%A8%E8%80%85"><span class="toc-number">2.1.</span> <span class="toc-text">透過 MySQL command line client 連結到 MariaDB，並建立資料庫與使用者</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BB%BA%E7%AB%8BDrupal%E5%AE%B9%E5%99%A8%EF%BC%8C%E4%B8%A6%E4%B8%94%E8%88%87MariaDB%E5%AE%B9%E5%99%A8%E9%80%A3%E6%8E%A5"><span class="toc-number">2.2.</span> <span class="toc-text">建立Drupal容器，並且與MariaDB容器連接</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%94%A8-Docker-Compose-%E4%B8%80%E6%AC%A1%E5%BB%BA%E7%AB%8B2%E5%80%8B%E5%AE%B9%E5%99%A8%E8%88%87%E8%A8%AD%E5%AE%9A"><span class="toc-number">3.</span> <span class="toc-text">用 Docker Compose 一次建立2個容器與設定</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%89%E8%A3%9D-Docker-Compose"><span class="toc-number">3.1.</span> <span class="toc-text">安裝 Docker Compose</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BB%BA%E7%AB%8B-Compose-%E6%AA%94%E6%A1%88"><span class="toc-number">3.2.</span> <span class="toc-text">建立 Compose 檔案</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%8F%E9%81%8E-Compose-%E5%95%9F%E5%8B%95%E6%9C%8D%E5%8B%99"><span class="toc-number">3.3.</span> <span class="toc-text">透過 Compose 啟動服務</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BB%BA%E7%AB%8B%E9%80%8F%E9%81%8E-MySQL-command-line-client-%E9%80%A3%E7%B5%90%E5%88%B0-MariaDB-compose-%E7%89%88"><span class="toc-number">3.4.</span> <span class="toc-text">建立透過 MySQL command line client 連結到 MariaDB (compose 版)</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%8F%83%E8%80%83%E8%B3%87%E6%96%99-v10"><span class="toc-number">4.</span> <span class="toc-text">參考資料</span></a></li></ol></div></div></div><div class="card-widget card-recent-post"><div class="card-content"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/8a00778d/" title="Logseq-publishing"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Logseq-publishing"/></a><div class="content"><a class="title" href="/posts/8a00778d/" title="Logseq-publishing">Logseq-publishing</a><time datetime="2022-08-24T00:00:00.000Z" title="發表於 2022-08-24 00:00:00">2022-08-24</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/8a69c7ae/" title="Sphinx 程式碼文件產生器"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Sphinx 程式碼文件產生器"/></a><div class="content"><a class="title" href="/posts/8a69c7ae/" title="Sphinx 程式碼文件產生器">Sphinx 程式碼文件產生器</a><time datetime="2019-07-05T00:00:00.000Z" title="發表於 2019-07-05 00:00:00">2019-07-05</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/5ee86cc2/" title="ST-GCN 架設"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="ST-GCN 架設"/></a><div class="content"><a class="title" href="/posts/5ee86cc2/" title="ST-GCN 架設">ST-GCN 架設</a><time datetime="2019-05-28T00:00:00.000Z" title="發表於 2019-05-28 00:00:00">2019-05-28</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/e9722c55/" title="Anaconda 操作筆記"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Anaconda 操作筆記"/></a><div class="content"><a class="title" href="/posts/e9722c55/" title="Anaconda 操作筆記">Anaconda 操作筆記</a><time datetime="2019-05-25T00:00:00.000Z" title="發表於 2019-05-25 00:00:00">2019-05-25</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/56dec6fa/" title="OpenPose 安裝紀錄"><img src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/img/default.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="OpenPose 安裝紀錄"/></a><div class="content"><a class="title" href="/posts/56dec6fa/" title="OpenPose 安裝紀錄">OpenPose 安裝紀錄</a><time datetime="2019-05-10T00:00:00.000Z" title="發表於 2019-05-10 00:00:00">2019-05-10</time></div></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2017 - 2022 By Heegreis</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主題 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text"><div>Icons made by <a target="_blank" rel="noopener" href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a target="_blank" rel="noopener" href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="閱讀模式"><i class="fas fa-book-open"></i></button><button id="translateLink" type="button" title="簡繁轉換">简</button><button id="darkmode" type="button" title="淺色和深色模式轉換"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="單欄和雙欄切換"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside_config" type="button" title="設定"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目錄"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="直達評論"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到頂部"><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><div class="js-pjax"><script>function loadDisqus () {
+  var disqus_config = function () {
+    this.page.url = 'https://heegreis.com/posts/613b126e/'
+    this.page.identifier = 'posts/613b126e/'
+    this.page.title = '透過Docker建立Drupal7(Apache)容器和MariaDB容器的link'
+  };
+
+  window.disqusReset = () => {
+    DISQUS.reset({
+      reload: true,
+      config: disqus_config
+    })
+  }
+
+  if (window.DISQUS) disqusReset()
+  else {
+    (function() { 
+      var d = document, s = d.createElement('script');
+      s.src = 'https://heegreis-blog.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', +new Date());
+      (d.head || d.body).appendChild(s);
+    })();
+  }
+}
+
+if ('Disqus' === 'Disqus' || !false) {
+  if (false) btf.loadComment(document.getElementById('disqus_thread'), loadDisqus)
+  else loadDisqus()
+} else {
+  function loadOtherComment () {
+    loadDisqus()
+  }
+}
+</script><script>if (window.DISQUSWIDGETS === undefined) {
+  var d = document, s = d.createElement('script');
+  s.src = 'https://heegreis-blog.disqus.com/count.js';
+  s.id = 'dsq-count-scr';
+  (d.head || d.body).appendChild(s);
+} else {
+  DISQUSWIDGETS.getCount({reset: true});
+}</script></div><script defer="defer" id="fluttering_ribbon" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1/dist/canvas-fluttering-ribbon.min.js"></script></div></body></html>
